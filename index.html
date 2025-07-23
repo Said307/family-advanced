@@ -1,56 +1,55 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Family Tree from CSV - Root Centered & Scrollable</title>
-  <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-      background: #f9f9f9;
-    }
-    h2 {
-      text-align: center;
-      margin: 10px 0;
-    }
-    .tree-container {
-      width: 100vw;
-      height: calc(100vh - 50px);
-      overflow-x: auto;
-      overflow-y: auto;
-      border-top: 1px solid #ccc;
-      background: white;
-      
-    }
-    svg {
-      font: 12px sans-serif;
-      user-select: none;
-    }
-    .node circle {
-      fill: #4a90e2;
-      stroke: #357ABD;
-      stroke-width: 2px;
-      cursor: pointer;
-      transition: fill 0.3s;
-    }
-    .node circle.collapsed {
-      fill: #fc0313;
-    }
-    .node text {
-      font-size: 14px;
-      fill: #333;
-      cursor: pointer;
-      user-select: none;
-    }
-    .link {
-      fill: none;
-      stroke: #aaa;
-      stroke-opacity: 0.6;
-      stroke-width: 2px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Family Tree from CSV - Root Centered & Scrollable</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background: #f9f9f9;
+    overflow: auto; /* allow scrolling if needed */
+  }
+  h2 {
+    text-align: center;
+    margin: 10px 0;
+  }
+  .tree-container {
+    width: 100%; /* was 100vw */
+    height: calc(100vh - 50px);
+    overflow: auto;
+    border-top: 1px solid #ccc;
+    background: white;
+  }
+  svg {
+    font: 12px sans-serif;
+    user-select: none;
+  }
+  .node circle {
+    fill: #4a90e2;
+    stroke: #357ABD;
+    stroke-width: 2px;
+    cursor: pointer;
+    transition: fill 0.3s;
+  }
+  .node circle.collapsed {
+    fill: #fc0313;
+  }
+  .node text {
+    font-size: 14px;
+    fill: #333;
+    cursor: pointer;
+    user-select: none;
+  }
+  .link {
+    fill: none;
+    stroke: #aaa;
+    stroke-opacity: 0.6;
+    stroke-width: 2px;
+  }
+</style>
 </head>
 <body>
   <h2>Family Tree from CSV - Root Centered & Scrollable</h2>
@@ -58,107 +57,105 @@
     <svg></svg>
   </div>
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script>
-    const container = d3.select(".tree-container");
-    const svg = d3.select("svg");
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const container = d3.select(".tree-container");
+const svg = d3.select("svg");
 
-    d3.csv("family_tree.csv").then(data => {
-      const dataPairs = data.map(row => [
-        { id: row.parent_id, name: row.parent_name },
-        { id: row.child_id, name: row.child_name }
-      ]);
+d3.csv("family_tree.csv").then(data => {
+  const dataPairs = data.map(row => [
+    { id: row.parent_id, name: row.parent_name },
+    { id: row.child_id, name: row.child_name }
+  ]);
 
-      const nodes = new Map();
+  const nodes = new Map();
 
-      for (const [parent, child] of dataPairs) {
-        if (!nodes.has(parent.id)) {
-          nodes.set(parent.id, { id: parent.id, name: parent.name, children: [] });
-        }
-        if (!nodes.has(child.id)) {
-          nodes.set(child.id, { id: child.id, name: child.name, children: [] });
-        }
-        nodes.get(parent.id).children.push(nodes.get(child.id));
-      }
+  for (const [parent, child] of dataPairs) {
+    if (!nodes.has(parent.id)) {
+      nodes.set(parent.id, { id: parent.id, name: parent.name, children: [] });
+    }
+    if (!nodes.has(child.id)) {
+      nodes.set(child.id, { id: child.id, name: child.name, children: [] });
+    }
+    nodes.get(parent.id).children.push(nodes.get(child.id));
+  }
 
-      const childIds = new Set(dataPairs.map(([_, c]) => c.id));
-      const root = [...nodes.values()].find(n => !childIds.has(n.id));
+  const childIds = new Set(dataPairs.map(([_, c]) => c.id));
+  const root = [...nodes.values()].find(n => !childIds.has(n.id));
 
-      const rootHierarchy = d3.hierarchy(root);
+  const rootHierarchy = d3.hierarchy(root);
 
-      const nodeHeight = 70;
-      const nodeWidth = 140;
-      const margin = 150;
+  const nodeHeight = 70;
+  const nodeWidth = 140;
+  const margin = 150;
 
-      function toggle(d) {
-        if (d.children) {
-          d._children = d.children;
-          d.children = null;
-        } else if (d._children) {
-          d.children = d._children;
-          d._children = null;
-        }
-        update(d);
-      }
+  function toggle(d) {
+    if (d.children) {
+      d._children = d.children;
+      d.children = null;
+    } else if (d._children) {
+      d.children = d._children;
+      d._children = null;
+    }
+    update(d);
+  }
 
-      function update(source) {
-        const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth]);
-        treeLayout(rootHierarchy);
+  function update(source) {
+    const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth]);
+    treeLayout(rootHierarchy);
 
-        const xVals = rootHierarchy.descendants().map(d => d.x);
-        const yVals = rootHierarchy.descendants().map(d => d.y);
-        const minX = Math.min(...xVals);
-        const maxX = Math.max(...xVals);
-        const minY = Math.min(...yVals);
-        const maxY = Math.max(...yVals);
+    const xVals = rootHierarchy.descendants().map(d => d.x);
+    const yVals = rootHierarchy.descendants().map(d => d.y);
+    const minX = Math.min(...xVals);
+    const maxX = Math.max(...xVals);
+    const minY = Math.min(...yVals);
+    const maxY = Math.max(...yVals);
 
-        const diagramWidth = maxX - minX + margin * 2;
-        const diagramHeight = maxY - minY + margin * 2;
+    const diagramWidth = maxX - minX + margin * 2;
+    const diagramHeight = maxY - minY + margin * 2;
 
-        const viewportWidth = container.node().clientWidth;
+    svg
+      .attr("width", diagramWidth)
+      .attr("height", diagramHeight);
 
-        svg
-          .attr("width", diagramWidth)
-          .attr("height", diagramHeight);
+    svg.selectAll("*").remove();
 
-        svg.selectAll("*").remove();
+    const centerOffset = diagramWidth / 2 - rootHierarchy.x;
 
-        const centerOffset = viewportWidth / 2 - rootHierarchy.x;
+    const g = svg.append("g")
+      .attr("transform", `translate(${centerOffset},${margin})`);
 
-        const g = svg.append("g")
-          .attr("transform", `translate(${centerOffset},${margin})`);
+    g.selectAll(".link")
+      .data(rootHierarchy.links())
+      .join("path")
+      .attr("class", "link")
+      .attr("d", d3.linkVertical()
+        .x(d => d.x)
+        .y(d => d.y)
+      );
 
-        g.selectAll(".link")
-          .data(rootHierarchy.links())
-          .join("path")
-          .attr("class", "link")
-          .attr("d", d3.linkVertical()
-            .x(d => d.x)
-            .y(d => d.y)
-          );
+    const nodes = g.selectAll(".node")
+      .data(rootHierarchy.descendants())
+      .join("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.x},${d.y})`)
+      .on("click", (event, d) => toggle(d));
 
-        const nodes = g.selectAll(".node")
-          .data(rootHierarchy.descendants())
-          .join("g")
-          .attr("class", "node")
-          .attr("transform", d => `translate(${d.x},${d.y})`)
-          .on("click", (event, d) => toggle(d));
+    nodes.append("circle")
+      .attr("r", 10)
+      .attr("class", d => d.children ? "" : d._children ? "collapsed" : "")
+      .style("cursor", "pointer");
 
-        nodes.append("circle")
-          .attr("r", 10)
-          .attr("class", d => d.children ? "" : d._children ? "collapsed" : "")
-          .style("cursor", "pointer");
+    nodes.append("text")
+      .attr("dy", "0.35em")
+      .attr("y", 30)
+      .attr("text-anchor", "middle")
+      .text(d => d.data.name)
+      .style("cursor", "pointer");
+  }
 
-        nodes.append("text")
-          .attr("dy", "0.35em")
-          .attr("y", 30)
-          .attr("text-anchor", "middle")
-          .text(d => d.data.name)
-          .style("cursor", "pointer");
-      }
-
-      update(rootHierarchy);
-    });
-  </script>
+  update(rootHierarchy);
+});
+</script>
 </body>
 </html>
