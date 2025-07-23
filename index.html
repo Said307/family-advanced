@@ -94,10 +94,17 @@ d3.csv("family_tree.csv").then(data => {
     }
     if (!nodes.has(child.id)) {
       nodes.set(child.id, { id: child.id, name: child.name, children: [] });
+    }
+    nodes.get(parent.id).children.push(nodes.get(child.id));
+  }
 
-rootHierarchy = d3.hierarchy(testData);
+  const childIds = new Set(dataPairs.map(([_, c]) => c.id));
+  const root = [...nodes.values()].find(n => !childIds.has(n.id));
 
-update(rootHierarchy);
+  rootHierarchy = d3.hierarchy(root);
+
+  update(rootHierarchy);
+});
 
 function toggle(d) {
   if (d.children) {
