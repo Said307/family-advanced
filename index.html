@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Family Tree from CSV - Root Centered & Scrollable 3 </title>
+<title>Family Tree from CSV - Root Centered & Scrollable 3</title>
 <style>
   html, body {
     margin: 0;
@@ -17,7 +17,7 @@
     margin: 10px 0;
   }
   .tree-container {
-    width: 100%; /* was 100vw */
+    width: 100%;
     height: calc(100vh - 50px);
     overflow: auto;
     border-top: 1px solid #ccc;
@@ -120,10 +120,10 @@ d3.csv("family_tree.csv").then(data => {
 
     svg.selectAll("*").remove();
 
-    const centerOffset = diagramWidth / 2 - rootHierarchy.x;
+    const centerOffsetX = (diagramWidth / 2) - rootHierarchy.x;
 
     const g = svg.append("g")
-      .attr("transform", `translate(${centerOffset},${margin})`);
+      .attr("transform", `translate(${centerOffsetX},${margin})`);
 
     g.selectAll(".link")
       .data(rootHierarchy.links())
@@ -152,6 +152,11 @@ d3.csv("family_tree.csv").then(data => {
       .attr("text-anchor", "middle")
       .text(d => d.data.name)
       .style("cursor", "pointer");
+
+    // Center root node in viewport
+    const containerNode = container.node();
+    const viewportWidth = containerNode.clientWidth;
+    containerNode.scrollLeft = (diagramWidth / 2) - (viewportWidth / 2);
   }
 
   update(rootHierarchy);
