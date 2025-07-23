@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Family Tree from CSV - Root Centered & Scrollable 4</title>
+<title>Family Tree from CSV - Properly Centered</title>
 <style>
   html, body {
     margin: 0;
@@ -52,7 +52,7 @@
 </style>
 </head>
 <body>
-  <h2>Family Tree from CSV - Root Centered & Scrollable</h2>
+  <h2>Family Tree from CSV - Properly Centered</h2>
   <div class="tree-container">
     <svg></svg>
   </div>
@@ -87,7 +87,7 @@ d3.csv("family_tree.csv").then(data => {
 
   const nodeHeight = 70;
   const nodeWidth = 140;
-  const margin = 150;
+  const margin = 50;
 
   function toggle(d) {
     if (d.children) {
@@ -104,32 +104,36 @@ d3.csv("family_tree.csv").then(data => {
     const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth]);
     treeLayout(rootHierarchy);
 
-    const xVals = rootHierarchy.descendants().map(d => d.x);
-    const yVals = rootHierarchy.descendants().map(d => d.y);
+    const nodesArray = rootHierarchy.descendants();
+
+    const xVals = nodesArray.map(d => d.x);
+    const yVals = nodesArray.map(d => d.y);
     const minX = Math.min(...xVals);
     const maxX = Math.max(...xVals);
     const minY = Math.min(...yVals);
     const maxY = Math.max(...yVals);
 
-    const diagramWidth = maxX - minX + margin * 2;
-    const diagramHeight = maxY - minY + margin * 2;
+    const treeWidth = maxX - minX + margin * 2;
+    const treeHeight = maxY - minY + margin * 2;
 
     const containerNode = container.node();
     const viewportWidth = containerNode.clientWidth;
 
-    const svgWidth = Math.max(diagramWidth, viewportWidth);
+    const svgWidth = Math.max(viewportWidth, treeWidth);
+    const svgHeight = treeHeight;
 
     svg
       .attr("width", svgWidth)
-      .attr("height", diagramHeight);
+      .attr("height", svgHeight);
 
     svg.selectAll("*").remove();
 
-    // Compute center offset so root is centered in SVG
-    const centerOffsetX = svgWidth / 2 - rootHierarchy.x;
+    // compute translation so root is horizontally centered
+    const rootX = rootHierarchy.x;
+    const offsetX = (svgWidth / 2) - rootX;
 
     const g = svg.append("g")
-      .attr("transform", `translate(${centerOffsetX},${margin})`);
+      .attr("transform", `translate(${offsetX},${margin - minY})`);
 
     g.selectAll(".link")
       .data(rootHierarchy.links())
@@ -141,7 +145,7 @@ d3.csv("family_tree.csv").then(data => {
       );
 
     const nodes = g.selectAll(".node")
-      .data(rootHierarchy.descendants())
+      .data(nodesArray)
       .join("g")
       .attr("class", "node")
       .attr("transform", d => `translate(${d.x},${d.y})`)
@@ -149,18 +153,13 @@ d3.csv("family_tree.csv").then(data => {
 
     nodes.append("circle")
       .attr("r", 10)
-      .attr("class", d => d.children ? "" : d._children ? "collapsed" : "")
-      .style("cursor", "pointer");
+      .attr("class", d => d.children ? "" : d._children ? "collapsed" : "");
 
     nodes.append("text")
       .attr("dy", "0.35em")
       .attr("y", 30)
       .attr("text-anchor", "middle")
-      .text(d => d.data.name)
-      .style("cursor", "pointer");
-
-    // Scroll container so root node is centered in viewport
-    containerNode.scrollLeft = (svgWidth / 2) - (viewportWidth / 2);
+      .text(d => d.data.name);
   }
 
   update(rootHierarchy);
