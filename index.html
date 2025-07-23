@@ -80,22 +80,20 @@ svg.call(zoom);
 let g;
 let rootHierarchy;
 
-// 👇 TEST DATA INSTEAD OF CSV
-const testData = {
-  id: '1',
-  name: 'Root',
-  children: [
-    { id: '2', name: 'Child 1' },
-    {
-      id: '3',
-      name: 'Child 2',
-      children: [
-        { id: '4', name: 'Grandchild 1' },
-        { id: '5', name: 'Grandchild 2' }
-      ]
+d3.csv("family_tree.csv").then(data => {
+  const dataPairs = data.map(row => [
+    { id: row.parent_id, name: row.parent_name },
+    { id: row.child_id, name: row.child_name }
+  ]);
+
+  const nodes = new Map();
+
+  for (const [parent, child] of dataPairs) {
+    if (!nodes.has(parent.id)) {
+      nodes.set(parent.id, { id: parent.id, name: parent.name, children: [] });
     }
-  ]
-};
+    if (!nodes.has(child.id)) {
+      nodes.set(child.id, { id: child.id, name: child.name, children: [] });
 
 rootHierarchy = d3.hierarchy(testData);
 
