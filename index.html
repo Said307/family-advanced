@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>  My Family </title>
+<title>My Family</title>
 <style>
   html, body {
     margin: 0;
@@ -16,16 +16,21 @@
     text-align: center;
     margin: 10px 0;
   }
+  .controls {
+    text-align: center;
+    margin: 5px;
+  }
   .tree-container {
     width: 100%;
-    height: calc(100vh - 50px);
-    overflow: auto;
+    height: calc(100vh - 90px);
+    overflow: hidden;
     border-top: 1px solid #ccc;
     background: white;
   }
   svg {
     font: 12px sans-serif;
     user-select: none;
+    cursor: grab;
   }
   .node circle {
     fill: #4a90e2;
@@ -52,7 +57,10 @@
 </style>
 </head>
 <body>
-  <h2> My Family </h2>
+  <h2>My Family</h2>
+  <div class="controls">
+    <button id="resetView">Reset View</button>
+  </div>
   <div class="tree-container">
     <svg></svg>
   </div>
@@ -61,6 +69,13 @@
 <script>
 const container = d3.select(".tree-container");
 const svg = d3.select("svg");
+
+const zoom = d3.zoom().on("zoom", (event) => {
+  g.attr("transform", event.transform);
+});
+svg.call(zoom);
+
+let g; // declare here for scope
 
 d3.csv("family_tree.csv").then(data => {
   const dataPairs = data.map(row => [
@@ -118,22 +133,15 @@ d3.csv("family_tree.csv").then(data => {
 
     const containerNode = container.node();
     const viewportWidth = containerNode.clientWidth;
-
-    const svgWidth = Math.max(viewportWidth, treeWidth);
-    const svgHeight = treeHeight;
+    const viewportHeight = containerNode.clientHeight;
 
     svg
-      .attr("width", svgWidth)
-      .attr("height", svgHeight);
+      .attr("width", viewportWidth)
+      .attr("height", viewportHeight);
 
     svg.selectAll("*").remove();
 
-    // compute translation so root is horizontally centered
-    const rootX = rootHierarchy.x;
-    const offsetX = (svgWidth / 2) - rootX;
-
-    const g = svg.append("g")
-      .attr("transform", `translate(${offsetX},${margin - minY})`);
+    g = svg.append("g");
 
     g.selectAll(".link")
       .data(rootHierarchy.links())
@@ -160,10 +168,5 @@ d3.csv("family_tree.csv").then(data => {
       .attr("y", 30)
       .attr("text-anchor", "middle")
       .text(d => d.data.name);
-  }
 
-  update(rootHierarchy);
-});
-</script>
-</body>
-</html>
+    fitToScreen(); // fit after initial render
